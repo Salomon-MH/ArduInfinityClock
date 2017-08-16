@@ -19,6 +19,7 @@ const int MAX_BUF      = 64;
 // includes
 //------------------------------------------------------------------------------
 #include <Adafruit_NeoPixel.h>
+#include <Wire.h>
 #include <RTClib.h>
 
 //------------------------------------------------------------------------------
@@ -32,7 +33,8 @@ const int MAX_BUF      = 64;
 //   NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
 //   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip)
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, 2, NEO_GRB + NEO_KHZ800);
-RTC_Millis rtc; //defines the DS1307 as "rtc"
+//RTC_Millis rtc; //defines the DS1307 as "rtc"
+RTC_DS1307 rtc; //defines the DS1307 as "rtc"
 
 #define hours 48 //24 or 12?
 
@@ -42,6 +44,8 @@ int sofar;
 long start_seconds;
 long start_time;
 
+double brightnessmod;
+
 //------------------------------------------------------------------------------
 // methods
 //------------------------------------------------------------------------------
@@ -50,8 +54,17 @@ long start_time;
 void setup() {
   // open communications
   Serial.begin(BAUD);
+
   
-  rtc.adjust(DateTime(__DATE__, __TIME__)); //Sets or gets the RTC clock time
+  //RTC - Vom Beispiel einfach übernommen
+  #ifdef AVR
+   Wire.begin();
+  #else
+   Wire1.begin()
+  #endif
+   rtc.begin();
+  
+  //rtc.adjust(DateTime(__DATE__, __TIME__)); //Sets the RTC clock time. Uncomment if you want to set the time, but dont forget to comment it in again afterwards!!
 
   // start the strip  
   strip.begin();
@@ -72,6 +85,9 @@ void loop() {
   Serial.print(":");
   Serial.println(now.second());
 
+  if (h > 21 || h < 8) brightnessmod = 0.15;
+  else brightnessmod = 0.8;
+  
   if (h >= 12) h -= 12;
 
   // make sure the elapsed_seconds doesn't overflow.
@@ -89,15 +105,20 @@ void loop() {
     c = (i == h*5 ? 255 : 0 );
     
     if( a==0 && b==0 && c==0 ) { //Sets white dots
-      if( (i%5)==0 ) a=b=c=(strip.numPixels()/24)*(i/5);
-      if( i==0 ) a=b=c=(strip.numPixels()/24);
+      if( (i%5)==0 ) a=b=c=(3);
+      if( i==0 ) a=b=c=(3);
     }
+
+    if (a == 255) a *= brightnessmod;
+    if (b == 255) b *= brightnessmod;
+    if (c == 255) c *= brightnessmod;
     
     // this way we combine the colors when they overlap.
     strip.setPixelColor(i, strip.Color(a, b, c));
   }
   strip.show();
   delay(10);
+  //Milliseconds: move one every 17 ms, but not necessary.
 }
 
 
