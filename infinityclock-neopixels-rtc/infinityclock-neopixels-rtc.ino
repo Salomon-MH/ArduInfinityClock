@@ -44,7 +44,7 @@ int sofar;
 long start_seconds;
 long start_time;
 
-double brightnessmod;
+double brightnessmod = 1;
 
 //------------------------------------------------------------------------------
 // methods
@@ -65,6 +65,7 @@ void setup() {
    rtc.begin();
   
   //rtc.adjust(DateTime(__DATE__, __TIME__)); //Sets the RTC clock time. Uncomment if you want to set the time, but dont forget to comment it in again afterwards!!
+  //EXAMPLE TIME: rtc.adjust(DateTime(2015, 2, 4, 10, 51, 0));
 
   // start the strip  
   strip.begin();
@@ -85,8 +86,8 @@ void loop() {
   Serial.print(":");
   Serial.println(now.second());
 
-  if (h > 21 || h < 8) brightnessmod = 0.15;
-  else brightnessmod = 0.8;
+  /*if (h > 21 || h < 8) brightnessmod = 0.15;
+  else brightnessmod = 0.8;*/
   
   if (h >= 12) h -= 12;
 
@@ -103,15 +104,31 @@ void loop() {
     b = ( i == m ? 255 : 0 );
     //c = ( floor((float)i/2.5) == h ? 255 : 0 );
     c = (i == h*5 ? 255 : 0 );
+    if (c != 255) {
+      if (i == h*5+1) c = 100;
+      else if (h*5-1 < 0) {if (i == 59) c = 100;}
+      else if (i == h*5-1) c = 100;
+      else c = 0;
+    }
+
+
+    if( a==0 && b==0 && c==0 ) { //Special orange dots at 12, 3, 6, 9
+      if( i == 0 || i == 15 || i == 30 || i == 45 ) {a=10; b=7; c=0;}
+    }
     
     if( a==0 && b==0 && c==0 ) { //Sets white dots
       if( (i%5)==0 ) a=b=c=(3);
       if( i==0 ) a=b=c=(3);
     }
+    
+    
+    if (b == 255 && c >= 100) c = 0;
+
 
     if (a == 255) a *= brightnessmod;
     if (b == 255) b *= brightnessmod;
-    if (c == 255) c *= brightnessmod;
+    if (c == 255 || c == 100) c *= brightnessmod;
+    
     
     // this way we combine the colors when they overlap.
     strip.setPixelColor(i, strip.Color(a, b, c));
