@@ -45,6 +45,8 @@ long start_seconds;
 long start_time;
 
 double brightnessmod = 1;
+uint8_t millicount;
+uint8_t oldSecond;
 
 //------------------------------------------------------------------------------
 // methods
@@ -124,18 +126,23 @@ void loop() {
     
     if (b == 255 && c >= 100) c = 0;
 
+    //Milliseconds: move one every 17 ms.
+    if (oldSecond != s) {oldSecond = s; millicount = 0;} //millicount
+    if (i == millicount) {a = (a > 40)? a : 28; /*b = (b > 40)? b : 40;*/}
+    //if (i == millicount-1) {a = (a > 30)? a : 30; c = (c > 30)? c : 30;}
 
-    if (a == 255) a *= brightnessmod;
-    if (b == 255) b *= brightnessmod;
-    if (c == 255 || c == 100) c *= brightnessmod;
+    if (a < 10) a *= brightnessmod;
+    if (b < 10) b *= brightnessmod;
+    if (c < 10) c *= brightnessmod;
     
     
     // this way we combine the colors when they overlap.
     strip.setPixelColor(i, strip.Color(a, b, c));
   }
   strip.show();
-  delay(10);
-  //Milliseconds: move one every 17 ms, but not necessary.
+
+  millicount = (millicount > 58)? 59 : millicount+1;
+  delay(12);
 }
 
 
